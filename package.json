@@ -1,4 +1,5 @@
 {
+  "name": "nextjs-dashboard",
   "private": true,
   "scripts": {
     "build": "next build",

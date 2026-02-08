@@ -115,3 +115,7 @@
 //     return Response.json({ error }, { status: 500 });
 //   }
 // }
+
+export async function GET() {
+  return Response.json({ message: "Seed route is disabled" });
+}

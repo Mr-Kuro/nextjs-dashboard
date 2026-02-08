@@ -33,6 +33,9 @@ export type State = {
 };
 
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
+const UpdateInvoice = FormSchema.omit({ date: true });
+
+const DeleteInvoice = z.object({ id: z.string() });
 
 export async function createInvoice(prevState: State, formData: FormData) {
   // get form data as an object so we can validate it with Zod
@@ -72,40 +75,59 @@ export async function createInvoice(prevState: State, formData: FormData) {
 }
 
 // ...
-export async function updateInvoice(id: string, formData: FormData) {
-  const validatedFields = FormSchema.safeParse({
-    customerId: formData.get("customerId"),
-    amount: formData.get("amount"),
-    status: formData.get("status"),
-  });
+export async function updateInvoice(
+  id: string,
+  prevState: State,
+  formData: FormData,
+) {
+  // const validatedFields = UpdateInvoice.safeParse({
+  //   customerId: formData.get("customerId"),
+  //   amount: formData.get("amount"),
+  //   status: formData.get("status"),
+  // });
+
+  const entriesObject = Object.fromEntries(formData.entries());
+  const validatedFields = UpdateInvoice.safeParse({ ...entriesObject, id });
+
+  console.log("Form Data:", Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: "Missing Fields. Failed to Update Invoice.",
-      d,
     };
   }
 
   const { customerId, amount, status } = validatedFields.data;
-
   const amountInCents = amount * 100;
 
   try {
     await sql`
-        UPDATE invoices
-        SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-        WHERE id = ${id}
-      `;
+      UPDATE invoices
+      SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+      WHERE id = ${id}
+    `;
   } catch (error) {
     return { message: "Database Error: Failed to Update Invoice." };
   }
+
+  console.log("Invoice updated successfully");
 
   revalidatePath("/dashboard/invoices");
   redirect("/dashboard/invoices");
 }
 
 export async function deleteInvoice(id: string) {
+  // const validatedFields = DeleteInvoice.safeParse({ id });
+
+  // if (!validatedFields.success) {
+  //   return {
+  //     message: "Invalid Invoice ID. Failed to Delete Invoice.",
+  //   };
+  // }
+
+  // const { id: validId } = validatedFields.data;
+
   try {
     await sql`DELETE FROM invoices WHERE id = ${id}`;
     revalidatePath("/dashboard/invoices");
